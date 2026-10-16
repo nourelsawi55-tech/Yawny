@@ -189,6 +189,26 @@ textarea.fld{height:84px;padding:10px 16px;border-radius:18px;resize:none;direct
 @media (min-width:900px){.toast{bottom:40px}}
 @media (max-width:480px){.hero{grid-template-columns:1fr;justify-items:center;text-align:center}.stats{justify-content:center}}
 @media (prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition:none!important}}
+
+/* v2 */
+.ring{width:164px;height:164px}.ring b{font-size:36px}
+.hero.full .ring .p{filter:drop-shadow(0 0 8px var(--ac))}
+.ex{padding:12px 0;border-bottom:1px solid var(--track)}.ex:last-of-type{border:0}
+.eh{display:flex;align-items:center;gap:8px;margin-bottom:4px}.eh b{flex:1;font-size:16px}
+.hint{font-size:12px;color:var(--muted)}
+.sr{display:flex;align-items:center;gap:6px;margin:6px 0}.sr em{width:20px;font-style:normal;color:var(--muted);font-size:13px;text-align:center}
+.sr .fld{height:38px;width:0;flex:1;text-align:center;padding:0 6px;direction:ltr}.sr u{text-decoration:none;font-size:12px;color:var(--muted)}
+.mini{height:32px;padding:0 12px;border-radius:16px;background:var(--glass2);border:1px solid var(--edge);font-size:13px;font-weight:600;color:var(--c,var(--ink))}
+#rt{position:fixed;z-index:60;top:calc(14px + env(safe-area-inset-top,0px));left:50%;transform:translateX(-50%);padding:8px 18px;border-radius:20px;font-weight:700;cursor:pointer;white-space:nowrap}
+.spk{width:100%;height:80px;margin-top:8px}
+.pod{display:flex;align-items:flex-end;justify-content:center;gap:10px;margin:6px 0 16px}
+.pd{flex:1;max-width:110px;text-align:center;font-size:13px}.pd small{display:block;margin:2px 0}
+.pd i{display:grid;place-items:center;font-style:normal;font-weight:700;border-radius:14px 14px 4px 4px;background:linear-gradient(180deg,var(--social),transparent)}
+.av{width:42px;height:42px;border-radius:50%;display:grid;place-items:center;background:var(--track);font-size:22px;flex:none}
+.stp{display:flex;gap:3px;margin-top:6px}.stp i{width:10px;height:16px;border-radius:3px;background:color-mix(in srgb,var(--social) calc(var(--v)*1%),var(--track))}
+.nd{display:inline-flex;align-items:center;height:30px;padding:0 12px;border-radius:15px;background:color-mix(in srgb,var(--social) 20%,transparent);color:var(--social);font-size:13px;font-weight:600;text-decoration:none}
+.fr label{flex:1;min-width:90px;font-size:12px;color:var(--muted)}
+.chips.av2 button{font-size:20px;padding:4px 12px}
 </style>
 </head>
 <body>
@@ -235,7 +255,7 @@ const NOTEPH={gym:'ملاحظات التمرين: الأوزان، الأرقا�
 function fresh(){const tasks={};CATS.forEach(c=>tasks[c.id]=DEF[c.id].map((t,i)=>({id:'d-'+c.id+'-'+i,t})));return{tasks,days:{},theme:null}}
 let S;try{S=JSON.parse(localStorage.getItem(KEY)||'null')}catch(e){S=null}
 if(!S||!S.tasks)S=fresh();
-function fix(){S.friends=S.friends||[];S.skin=S.skin||'ocean';S.chal=S.chal||7;
+function fix(){S.prof=S.prof||{h:170,w:70,k:2200,sg:8000};S.friends=S.friends||[];S.skin=S.skin||'ocean';S.chal=S.chal||7;
  S.me=S.me||{id:'u'+Math.random().toString(36).slice(2,10),name:''}}
 fix();
 function save(){try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}}
@@ -258,7 +278,8 @@ function catPct(cat,k){
  const D=peek(k),items=S.tasks[cat];
  if(cat==='gym'&&D.gym==='راحة')return 1;
  let total=items.length,done=items.filter(t=>D.d[t.id]).length;
- if(cat==='food'){total++;done+=Math.min(D.water/WATER,1)}
+ if(cat==='gym'){total++;if((D.ex||[]).some(e=>e.s.length))done++}
+ if(cat==='food'){total++;done+=Math.min(D.water/WATER,1);total++;done+=Math.min((D.st||0)/S.prof.sg,1)}
  if(cat==='study'){total++;done+=Math.min(D.study/GOAL,1)}
  return total?done/total:0;
 }
@@ -287,7 +308,8 @@ const enc=o=>'YW1.'+btoa(unescape(encodeURIComponent(JSON.stringify(o))));
 function dec(s){s=s.trim();if(!s.startsWith('YW1.'))throw 0;const o=JSON.parse(decodeURIComponent(escape(atob(s.slice(4)))));if(!o.i||!o.n||!Array.isArray(o.h))throw 0;return o}
 function myCode(){
  const h=[];for(let i=29;i>=0;i--)h.push(Math.round(dayPct(shift(todayKey,-i))*100));
- const [s,b]=streaks();return enc({v:1,i:S.me.id,n:S.me.name,t:todayKey,h,s,b});
+ const [s,b]=streaks();let st=0,w=0;for(let i=0;i<7;i++){const D=peek(shift(todayKey,-i));st+=D.st||0;if((D.ex||[]).some(e=>e.s.length))w++}
+ return enc({v:2,i:S.me.id,n:S.me.name,a:S.me.a||'😎',t:todayKey,h,s,b,st:Math.round(st/7),w});
 }
 function committed(h,t,N){let c=0;for(let i=0;i<N;i++){const o=diff(t,shift(todayKey,-i));if(o>=0&&o<30&&h[29-o]>=80)c++}return c}
 
@@ -311,15 +333,15 @@ function home(){
    <div><strong>${c.name}</strong><small>${num(dn)} من ${num(tk.length)} مهام</small><div class="bar"><i data-k="sb-${c.id}" data-t="${cp}" data-p="w" style="width:${cp*100}%"></i></div></div>
    <span class="pc">${num(Math.round(cp*100))}٪</span></button>`}).join('');
  return dateBar('اليوم','home')+`
- <div class="hero glass">${ring(p,'hr')}<div><h2>${h1}</h2><p>${h2}</p>
-  <div class="stats"><span class="chip">${ic('flame','fl')}${num(st)} يوم متتالي</span><span class="chip" style="color:#0a84ff">${ic('drop')}<span style="color:var(--ink)">${num(D.water)} كوباية</span></span><span class="chip">${ic('clock')}${num(D.study)} دقيقة</span></div></div></div>
+ <div class="hero glass ${p>=1?'full':''}">${ring(p,'hr')}<div><h2>${h1}</h2><p>${h2}</p>
+  <div class="stats"><span class="chip">${ic('flame','fl')}${num(st)} يوم متتالي</span><span class="chip" style="color:#0a84ff">${ic('drop')}<span style="color:var(--ink)">${num(D.water)} كوباية</span></span><span class="chip">${ic('clock')}${num(D.study)} دقيقة</span><span class="chip">${ic('check')}${num(CATS.reduce((a,c)=>a+S.tasks[c.id].filter(t=>D.d[t.id]).length,0))} من ${num(CATS.reduce((a,c)=>a+S.tasks[c.id].length,0))} مهمة</span><span class="chip">👟 ${num(D.st||0)} خطوة</span></div></div></div>
  <div class="week glass">${wk}</div><div class="grid">${sums}</div>`;
 }
 function catPage(c){
  const D=peek(cur),cp=catPct(c.id,cur);let extra='';
- if(c.id==='gym')extra=`<div class="panel glass" style="--c:${c.c}"><div class="ph"><h3>تمرين النهارده</h3></div><div class="chips">${TYPES.map(t=>`<button class="${D.gym===t?'on':''}" data-a="type" data-v="${t}">${t}</button>`).join('')}</div></div>`;
+ if(c.id==='gym')extra=gymX(c,D);
  if(c.id==='food'){let cups='';for(let i=0;i<WATER;i++){const pp=popW&&i>=popW[0]&&i<popW[1];cups+=`<button class="cup ${i<D.water?'on':''} ${pp?'pop':''}" style="--d:${pp?(i-popW[0])*60:0}ms" data-a="water" data-i="${i}" aria-label="كوباية ${i+1}"></button>`}
-  extra=`<div class="panel glass" style="--c:${c.c}"><div class="ph"><h3>المياه</h3><span class="pc">${num(D.water)} / ${num(WATER)}</span></div><div class="cups">${cups}</div></div>`}
+  extra=foodX(c,D)+`<div class="panel glass" style="--c:${c.c}"><div class="ph"><h3>المياه</h3><span class="pc">${num(D.water)} / ${num(WATER)}</span></div><div class="cups">${cups}</div></div>`}
  if(c.id==='study')extra=`<div class="panel glass" style="--c:${c.c}"><div class="ph"><h3>وقت التركيز</h3><span class="pc">الهدف ${num(GOAL)} دقيقة</span></div>
   <div class="mins"><strong>${num(D.study)} دقيقة</strong><button class="pill" data-a="min" data-v="-25">−٢٥</button><button class="pill pr" style="--c:${c.c}" data-a="min" data-v="25">${ic('plus')}٢٥ دقيقة</button></div></div>`;
  const list=S.tasks[c.id].map(t=>`<div class="task ${D.d[t.id]?'done':''} ${popT===t.id?'pop':''}">
@@ -333,29 +355,6 @@ function catPage(c){
   ${list||'<p class="sub">مفيش مهام. أضف أول مهمة من تحت.</p>'}
   <form class="add" data-cat="${c.id}"><input type="text" placeholder="اكتب مهمة جديدة" maxlength="60" aria-label="مهمة جديدة"><button type="submit" aria-label="إضافة مهمة">${ic('plus')}</button></form></div>
  <div class="panel glass"><div class="ph"><h3>ملاحظات اليوم</h3></div><textarea class="notes" data-note="${c.id}" placeholder="${NOTEPH[c.id]}">${esc(peek(cur).n&&peek(cur).n[c.id]||'')}</textarea></div>`;
-}
-function friends(){
- const N=S.chal,[st]=streaks();
- const rows=[{me:1,id:S.me.id,n:S.me.name||'أنت',c:committed(Array.from({length:30},(_,i)=>Math.round(dayPct(shift(todayKey,i-29))*100)),todayKey,N),s:st,age:0}];
- S.friends.forEach(f=>rows.push({id:f.id,n:f.n,c:committed(f.h,f.t,N),s:f.s,age:Math.max(0,diff(todayKey,f.t))}));
- rows.sort((a,b)=>b.c-a.c||b.s-a.s);
- const lb=rows.map((r,i)=>`<div class="lb ${r.me?'me':''}"><span class="rk ${i<3?'r'+(i+1):''}">${i===0?ic('trophy'):num(i+1)}</span>
-  <div class="who"><strong>${esc(r.n)}${r.me?' (أنت)':''}</strong><small>${num(r.c)} من ${num(N)} يوم التزام  ·  ${ic('flame')}${num(r.s)} متتالي${r.age>0?'  ·  آخر تحديث من '+num(r.age)+' يوم':''}</small>
-  <div class="bar"><i data-k="lb-${r.id}" data-t="${r.c/N}" data-p="w" style="width:${r.c/N*100}%"></i></div></div>
-  ${editing&&!r.me?`<button class="x" data-a="delf" data-id="${r.id}">إزالة</button>`:''}</div>`).join('');
- return`<div class="hd"><h1 style="--c:var(--social)">${ic('users')}الأصدقاء والتحدي</h1><div class="nav"><button class="pill" data-a="tab" data-t="settings" aria-label="الإعدادات">${ic('sliders')}</button></div></div>
- <div class="panel glass" style="--c:var(--social)"><div class="ph"><h3>لوحة التحدي</h3>${S.friends.length?`<button class="pill ${editing?'pr':''}" style="--c:var(--social)" data-a="edit">${editing?'تم':'تعديل'}</button>`:''}</div>
-  <p class="sub">اليوم الملتزم هو اللي بتخلّص فيه ٨٠٪ أو أكتر. الترتيب بعدد الأيام الملتزمة في آخر:</p>
-  <div class="chips" style="margin-bottom:14px">${[7,14,30].map(n=>`<button class="${N===n?'on':''}" style="--c:var(--social)" data-a="chal" data-v="${n}">${num(n)} يوم</button>`).join('')}</div>
-  ${lb}${S.friends.length?'':'<p class="sub">لسه معندكش أصدقاء. ضيف أول صديق بكوده من تحت وابدأ التحدي.</p>'}</div>
- <div class="panel glass" style="--c:var(--social)"><div class="ph"><h3>كودك</h3></div>
-  <input class="fld" data-field="name" value="${esc(S.me.name)}" maxlength="20" placeholder="اكتب اسمك الأول" aria-label="اسمك">
-  <div style="height:10px"></div><textarea class="fld" id="mycode" readonly>${S.me.name?myCode():''}</textarea>
-  <div class="fr"><button class="pill pr" style="--c:var(--social)" data-a="copy">${ic('copy')}نسخ الكود</button></div>
-  <p class="sub" style="margin-top:12px">ابعت كودك لصحابك على واتساب. كل واحد يلزق كود التاني هنا. جدّد الكود وابعته تاني كل ما تحب تحدّث نتيجتك.</p></div>
- <div class="panel glass" style="--c:var(--social)"><div class="ph"><h3>إضافة صديق</h3></div>
-  <textarea class="fld" id="fcode" placeholder="الزق كود صديقك هنا"></textarea>
-  <div class="fr"><button class="pill pr" style="--c:var(--social)" data-a="addf">${ic('plus')}إضافة أو تحديث</button></div></div>`;
 }
 function statsPage(){
  const keys=[];for(let i=6;i>=0;i--)keys.push(shift(todayKey,i));
@@ -379,6 +378,108 @@ function settings(){
   <div class="fr"><button class="pill" data-a="export">${ic('down')}تصدير نسخة</button><button class="pill" data-a="import">${ic('up')}استيراد نسخة</button><button class="pill danger" data-a="reset">${ic('trash')}مسح كل البيانات</button></div></div>`;
 }
 
+/* ---------- v2: gym / food / friends ---------- */
+const X={},ar=s=>String(s).replace(/\d/g,d=>'٠١٢٣٤٥٦٧٨٩'[d]),en=s=>String(s).replace(/[٠-٩]/g,d=>'٠١٢٣٤٥٦٧٨٩'.indexOf(d)).replace('٫','.'),wa=t=>'https://wa.me/?text='+encodeURIComponent(t);
+const LIB={صدر:['بنش برس','بنش مائل دمبل','تفتيح دمبل','متوازي'],ضهر:['سحب أمامي','تجديف بار','ديد ليفت','سحب أرضي'],رجل:['سكوات','ليج برس','ليج إكستنشن','ليج كيرل'],أكتاف:['ضغط أكتاف','رفرفة جانبي','رفرفة خلفي'],دراعات:['باي بار','هامر','ترايسبس حبل'],كارديو:[],راحة:[]};
+const lastW=()=>{const k=Object.keys(S.days).filter(k=>k<=cur&&S.days[k].bw>0).sort().pop();return k?S.days[k].bw:S.prof.w};
+const exDays=()=>Object.keys(S.days).filter(k=>(S.days[k].ex||[]).length).sort();
+function lastSets(n){const k=exDays().filter(k=>k<cur).reverse().find(k=>S.days[k].ex.some(e=>e.n===n&&e.s.length));return k?S.days[k].ex.find(e=>e.n===n).s:null}
+function bestOf(n,before){let b=0;exDays().forEach(k=>{if(k>=before)return;S.days[k].ex.forEach(e=>{if(e.n===n)e.s.forEach(s=>{b=Math.max(b,(s.w||0)*(1+(s.r||0)/30))})})});return b}
+function gymX(c,D){
+ const ex=D.ex||[],ks=Object.keys(S.days).filter(k=>k<=cur&&S.days[k].bw>0).sort().slice(-30),pts=ks.map(k=>S.days[k].bw),mn=Math.min(...pts),mx=Math.max(...pts),
+ line=pts.length>1?pts.map((v,i)=>`${(i*300/(pts.length-1)).toFixed(1)},${(70-(mx===mn?30:(v-mn)/(mx-mn)*60)).toFixed(1)}`).join(' '):'';
+ const pr={};exDays().forEach(k=>S.days[k].ex.forEach(e=>e.s.forEach(s=>{const v=(s.w||0)*(1+(s.r||0)/30);if(!pr[e.n]||v>pr[e.n].v)pr[e.n]={v,w:s.w||0,r:s.r||0}})));
+ const prs=Object.entries(pr).filter(([,x])=>x.v>0).sort((a,b)=>b[1].v-a[1].v).slice(0,5);
+ let wk=0,vol=0,tv=0;for(let i=0;i<7;i++){const d=peek(shift(cur,-i)).ex||[];if(d.some(e=>e.s.length))wk++;d.forEach(e=>e.s.forEach(s=>{vol+=(s.w||0)*(s.r||0)}))}
+ ex.forEach(e=>e.s.forEach(s=>{tv+=(s.w||0)*(s.r||0)}));
+ const names=[...new Set([...(D.gym?LIB[D.gym]||[]:Object.values(LIB).flat()),...Object.keys(pr)])];
+ const exs=ex.map((e,i)=>{const l=lastSets(e.n);return`<div class="ex"><div class="eh"><b>${esc(e.n)}</b><button class="x" data-a="delex" data-i="${i}">حذف</button></div>
+ ${l?`<div class="hint">آخر مرة: ${l.map(s=>ar((s.w||0)+'×'+(s.r||0))).join(' · ')}</div>`:''}
+ ${e.s.map((s,j)=>`<div class="sr"><em>${num(j+1)}</em><input class="fld" inputmode="decimal" data-q="w" data-i="${i}" data-j="${j}" value="${s.w||''}" placeholder="كجم" aria-label="الوزن"><u>كجم ×</u><input class="fld" inputmode="numeric" data-q="r" data-i="${i}" data-j="${j}" value="${s.r||''}" placeholder="عدّات" aria-label="العدّات">${s.pr?'<span title="رقم قياسي">🏆</span>':''}<button class="mini" data-a="delset" data-i="${i}" data-j="${j}" aria-label="حذف السيت">✕</button></div>`).join('')}
+ <button class="mini" style="--c:${c.c}" data-a="addset" data-i="${i}">+ سيت</button></div>`}).join('');
+ return`<div class="panel glass" style="--c:${c.c}"><div class="ph"><h3>وزني</h3><span class="pc">${D.bw?ar(D.bw)+' كجم':'—'}</span></div>
+ <div class="add"><input data-q="bw" inputmode="decimal" placeholder="سجّل وزنك النهارده (كجم)" value="${D.bw||''}"></div>
+ ${line?`<svg class="spk" viewBox="0 0 300 80" preserveAspectRatio="none"><polyline points="${line}" fill="none" stroke="var(--c)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" vector-effect="non-scaling-stroke"/></svg><p class="sub">${num(pts.length)} قياس · التغيّر ${ar(((pts.at(-1)-pts[0])>0?'+':'')+(pts.at(-1)-pts[0]).toFixed(1))} كجم</p>`:'<p class="sub">سجّل وزنك كل كام يوم وهيظهرلك الرسم.</p>'}</div>
+ <div class="panel glass" style="--c:${c.c}"><div class="ph"><h3>تمرين النهارده</h3></div><div class="chips">${TYPES.map(t=>`<button class="${D.gym===t?'on':''}" data-a="type" data-v="${t}">${t}</button>`).join('')}</div>
+ <div class="stats"><span class="chip">${ic('gym')}${num(wk)} تمارين الأسبوع</span><span class="chip">${num(Math.round(tv))} كجم حجم النهارده</span></div>
+ ${exs}${ex.length?'':`<p class="sub" style="margin-top:12px">لسه مسجلتش تمارين. ضيف أول تمرين أو انسخ آخر تمرين.</p><button class="mini" style="--c:${c.c}" data-a="cp">نسخ آخر تمرين مشابه</button>`}
+ <datalist id="exl">${names.map(n=>`<option value="${esc(n)}">`).join('')}</datalist>
+ <div class="add"><input id="exn" list="exl" placeholder="اسم التمرين (اختار أو اكتب)" maxlength="40"><button data-a="addex" aria-label="إضافة تمرين">${ic('plus')}</button></div>
+ <div class="fr"><span class="hint" style="align-self:center">راحة بين السيتات:</span>${[60,90,120].map(v=>`<button class="mini" data-a="rest" data-v="${v}">${num(v)} ث</button>`).join('')}</div></div>
+ <div class="panel glass" style="--c:${c.c}"><div class="ph"><h3>أرقامك القياسية</h3><span class="pc">${num(Math.round(vol))} كجم / ٧ أيام</span></div>
+ ${prs.map(([n,x])=>`<div class="task"><span class="tx">🏆 ${esc(n)}</span><b>${ar(x.w+' × '+x.r)}</b></div>`).join('')||'<p class="sub">سجّل أوزانك وهتظهر أقوى أرقامك هنا.</p>'}</div>`;
+}
+function foodX(c,D){
+ const m=D.m||[],eat=m.reduce((a,x)=>a+x.k,0),w=D.bw||lastW(),st=D.st||0,P=S.prof,km=st*P.h*.415/1e5,burn=Math.round(.57*w*km),left=P.k-eat+burn;
+ const Q=[['رغيف عيش',80],['بيضة',70],['موزة',105],['كوب رز',200],['فراخ مشوية',250],['زبادي',100]];
+ return`<div class="panel glass" style="--c:${c.c}"><div class="ph"><h3>السعرات</h3><span class="pc">${num(eat)} / ${num(P.k)}</span></div>
+ <div class="bar"><i style="width:${Math.min(eat/P.k*100,100)}%"></i></div>
+ <p class="sub">${left>=0?'المتبقي':'زيادة'}: <b>${num(Math.abs(left))}</b> سعرة (بعد حرق الخطوات). القيم تقريبية.</p>
+ <div class="chips">${Q.map(q=>`<button data-a="qm" data-n="${q[0]}" data-k="${q[1]}">${q[0]} · ${num(q[1])}</button>`).join('')}</div>
+ ${m.map((x,i)=>`<div class="task"><span class="tx">${esc(x.n)}</span><b>${num(x.k)}</b><button class="x" data-a="delm" data-i="${i}">حذف</button></div>`).join('')}
+ <div class="add"><input id="mn" placeholder="وجبة" maxlength="30"><input id="mk" inputmode="numeric" placeholder="سعرات" style="max-width:96px"><button data-a="addm" aria-label="إضافة وجبة">${ic('plus')}</button></div></div>
+ <div class="panel glass" style="--c:${c.c}"><div class="ph"><h3>الخطوات</h3><span class="pc">${num(st)} / ${num(P.sg)}</span></div>
+ <div class="bar"><i style="width:${Math.min(st/P.sg*100,100)}%"></i></div>
+ <div class="stats"><span class="chip">${ar(km.toFixed(1))} كم</span><span class="chip">${ic('flame','fl')}${num(burn)} سعرة محروقة</span><span class="chip">${ic('clock')}${num(Math.round(st/110))} دقيقة مشي</span></div>
+ <div class="fr"><button class="pill" data-a="stp" data-v="-500">−٥٠٠</button><button class="pill pr" style="--c:${c.c}" data-a="stp" data-v="500">+٥٠٠</button><button class="pill pr" style="--c:${c.c}" data-a="stp" data-v="1000">+١٠٠٠</button><button class="pill pr" style="--c:${c.c}" data-a="stp" data-v="2500">+٢٥٠٠</button></div>
+ <div class="fr"><label>خطوات اليوم<input class="fld" inputmode="numeric" data-q="st" value="${st||''}"></label><label>طولك (سم)<input class="fld" inputmode="numeric" data-q="h" value="${P.h}"></label></div>
+ <div class="fr"><label>هدف الخطوات<input class="fld" inputmode="numeric" data-q="sg" value="${P.sg}"></label><label>هدف السعرات<input class="fld" inputmode="numeric" data-q="kg" value="${P.k}"></label></div>
+ <p class="sub" style="margin-top:10px">الحرق محسوب من وزنك (${ar(w)} كجم) وطولك. الأرقام تقديرية.</p></div>`;
+}
+X.addex=()=>{const n=document.getElementById('exn').value.trim();if(!n)return 1;const D=day(cur),l=lastSets(n);(D.ex=D.ex||[]).push({n,s:[l?{w:l[0].w,r:l[0].r}:{w:0,r:0}]})};
+X.addset=b=>{const e=day(cur).ex[+b.dataset.i],l=e.s.at(-1)||{w:0,r:0};e.s.push({w:l.w,r:l.r})};
+X.delset=b=>{day(cur).ex[+b.dataset.i].s.splice(+b.dataset.j,1)};
+X.delex=b=>{if(!confirm('تحذف التمرين ده؟'))return 1;day(cur).ex.splice(+b.dataset.i,1)};
+X.cp=()=>{const D=day(cur),k=exDays().filter(k=>k<cur&&(!D.gym||S.days[k].gym===D.gym)).pop();if(!k){toast('مفيش تمرين سابق');return 1}D.ex=S.days[k].ex.map(e=>({n:e.n,s:e.s.map(s=>({w:s.w,r:s.r}))}))};
+X.qm=b=>{(day(cur).m=day(cur).m||[]).push({n:b.dataset.n,k:+b.dataset.k})};
+X.addm=()=>{const n=document.getElementById('mn').value.trim(),k=parseFloat(en(document.getElementById('mk').value))||0;if(!n||!k){toast('اكتب الوجبة والسعرات');return 1}(day(cur).m=day(cur).m||[]).push({n,k})};
+X.delm=b=>{day(cur).m.splice(+b.dataset.i,1)};
+X.stp=b=>{const D=day(cur);D.st=Math.max(0,(D.st||0)+ +b.dataset.v)};
+let rtI;X.rest=b=>{clearInterval(rtI);let n=+b.dataset.v;const e=document.getElementById('rt')||Object.assign(document.body.appendChild(document.createElement('div')),{id:'rt',className:'glass'});
+ const u=()=>e.textContent='⏱ '+ar(Math.floor(n/60)+':'+pad(n%60))+'  ✕';e.onclick=()=>{clearInterval(rtI);e.remove()};u();
+ rtI=setInterval(()=>{n--;if(n<=0){clearInterval(rtI);e.remove();toast('خلصت الراحة، كمّل 💪');navigator.vibrate&&navigator.vibrate(300)}else u()},1000);return 1};
+X.av=b=>{S.me.a=b.dataset.v};X.fm=b=>{fm=b.dataset.v};
+X.share=()=>{if(!S.me.name){toast('اكتب اسمك الأول');return 1}const c=myCode(),l=/^https?:/.test(location.protocol)?location.href.split('#')[0]+'#'+c:c,t='انضم لتحدي يومي 🔥\n'+l;
+ navigator.share?navigator.share({text:t}).catch(()=>{}):window.open(wa(t),'_blank');return 1};
+document.addEventListener('change',e=>{const t=e.target,g=t.dataset;if(!g.q)return;const D=day(cur),v=parseFloat(en(t.value))||0;
+ if(g.q==='bw')D.bw=v;else if(g.q==='st')D.st=Math.max(0,v);else if(g.q==='h')S.prof.h=v||170;else if(g.q==='kg')S.prof.k=v||2200;else if(g.q==='sg')S.prof.sg=v||8000;
+ else{const ex=D.ex[+g.i],s=ex.s[+g.j];s[g.q]=v;if(s.w>0&&s.r>0){const b=bestOf(ex.n,cur);s.pr=b>0&&s.w*(1+s.r/30)>b;if(s.pr)toast('🏆 رقم قياسي جديد: '+ex.n)}}
+ save();const y=scrollY;render();scrollTo(0,y)});
+function addF(v){try{const m=String(v).match(/YW1\.[A-Za-z0-9+\/=]+/),o=dec(m?m[0]:v);
+ if(o.i===S.me.id){toast('ده كودك أنت');return}
+ const f={id:o.i,n:String(o.n).slice(0,20),a:String(o.a||'🙂').slice(0,4),t:o.t,h:o.h.slice(-30).map(Number),s:+o.s||0,b:+o.b||0,st:+o.st||0,w:+o.w||0};
+ const ix=S.friends.findIndex(x=>x.id===f.id);ix>=0?S.friends[ix]=f:S.friends.push(f);save();render();toast((ix>=0?'تم تحديث ':'تمت إضافة ')+f.n)}catch(x){toast('الكود ده مش صالح')}}
+let fm='c';
+function friends(){
+ const N=S.chal,[st]=streaks(),h=[];for(let i=29;i>=0;i--)h.push(Math.round(dayPct(shift(todayKey,-i))*100));
+ let sw=0,wk=0;for(let i=0;i<7;i++){const D=peek(shift(todayKey,-i));sw+=D.st||0;if((D.ex||[]).some(e=>e.s.length))wk++}
+ const rows=[{me:1,id:S.me.id,n:S.me.name||'أنت',a:S.me.a||'😎',h,t:todayKey,s:st,st:Math.round(sw/7),w:wk,age:0}];
+ S.friends.forEach(f=>rows.push({...f,age:Math.max(0,diff(todayKey,f.t))}));
+ rows.forEach(r=>{r.c=committed(r.h,r.t,N)});
+ const V={c:[r=>r.c,N,r=>`${num(r.c)} من ${num(N)} يوم التزام`],s:[r=>r.s,30,r=>`${num(r.s)} يوم متتالي`],st:[r=>r.st||0,12000,r=>`${num(r.st||0)} خطوة/يوم`],w:[r=>r.w||0,7,r=>`${num(r.w||0)} من ٧ أيام تمرين`]}[fm];
+ rows.sort((a,b)=>V[0](b)-V[0](a)||b.s-a.s);
+ const ord=[rows[1],rows[0],rows[2]].filter(Boolean),code=S.me.name?myCode():'';
+ const pod=rows.length>1?`<div class="pod">${ord.map(r=>{const k=rows.indexOf(r);return`<div class="pd"><span class="av" style="margin:0 auto">${k===0?'👑':esc(r.a||'🙂')}</span><small>${esc(r.n)}</small><i style="height:${[96,70,54][k]}px">${num(k+1)}</i></div>`}).join('')}</div>`:'';
+ const lb=rows.map((r,i)=>`<div class="lb ${r.me?'me':''}"><span class="av">${esc(r.a||'🙂')}</span><div class="who"><strong>${i===0?'👑 ':''}${esc(r.n)}${r.me?' (أنت)':''}</strong><small>${V[2](r)} · ${ic('flame')}${num(r.s)}${r.age>0?' · آخر تحديث من '+num(r.age)+' يوم':''}</small>
+  <div class="stp">${r.h.slice(-7).map(x=>`<i style="--v:${x}"></i>`).join('')}</div><div class="bar"><i data-k="lb-${r.id}" data-t="${Math.min(V[0](r)/V[1],1)}" data-p="w" style="width:${Math.min(V[0](r)/V[1],1)*100}%"></i></div></div>
+  ${r.me?'':`<a class="nd" target="_blank" rel="noopener" href="${wa(r.age>2?'وحشتني نتيجتك يا '+r.n+'! ابعتلي كودك المحدّث على يومي 🔥':'برافو يا '+r.n+'، كمّل يا بطل 💪🔥')}">${r.age>2?'اطلب تحديث':'شجّعه'}</a>`}
+  ${editing&&!r.me?`<button class="x" data-a="delf" data-id="${r.id}">إزالة</button>`:''}</div>`).join('');
+ const chip=(a,v,t,on)=>`<button class="${on?'on':''}" style="--c:var(--social)" data-a="${a}" data-v="${v}">${t}</button>`;
+ return`<div class="hd"><h1 style="--c:var(--social)">${ic('users')}الأصدقاء والتحدي</h1><div class="nav"><button class="pill" data-a="tab" data-t="settings" aria-label="الإعدادات">${ic('sliders')}</button></div></div>
+ <div class="panel glass" style="--c:var(--social)"><div class="ph"><h3>لوحة التحدي</h3>${S.friends.length?`<button class="pill ${editing?'pr':''}" style="--c:var(--social)" data-a="edit">${editing?'تم':'تعديل'}</button>`:''}</div>
+  <div class="chips" style="margin-bottom:8px">${[['c','الالتزام'],['s','السلسلة'],['st','الخطوات'],['w','التمارين']].map(x=>chip('fm',x[0],x[1],fm===x[0])).join('')}</div>
+  ${fm==='c'?`<div class="chips" style="margin-bottom:12px">${[7,14,30].map(n=>chip('chal',n,num(n)+' يوم',N===n)).join('')}</div><p class="sub">اليوم الملتزم = ٨٠٪ أو أكتر.</p>`:''}
+  ${pod}${lb}${S.friends.length?'':'<p class="sub">لسه معندكش أصدقاء. ابعت دعوتك من تحت وابدأ التحدي.</p>'}</div>
+ <div class="panel glass" style="--c:var(--social)"><div class="ph"><h3>ملفك ودعوتك</h3></div>
+  <input class="fld" data-field="name" value="${esc(S.me.name)}" maxlength="20" placeholder="اكتب اسمك الأول" aria-label="اسمك">
+  <div class="chips av2" style="margin-top:10px">${['😎','🦁','🔥','🐺','🚀','🌟'].map(a=>`<button class="${(S.me.a||'😎')===a?'on':''}" style="--c:var(--social)" data-a="av" data-v="${a}">${a}</button>`).join('')}</div>
+  <div class="fr"><button class="pill pr" style="--c:var(--social)" data-a="share">${ic('up')}شارك دعوتك</button><button class="pill" data-a="copy">${ic('copy')}نسخ الكود</button></div>
+  <textarea class="fld" id="mycode" readonly style="margin-top:10px">${code}</textarea>
+  <p class="sub" style="margin-top:10px">الدعوة بتوصل لصاحبك على واتساب. لو فتحها من لينك، بيتضاف تلقائي. جدّد الكود وابعته كل ما تحب تحدّث نتيجتك.</p></div>
+ <div class="panel glass" style="--c:var(--social)"><div class="ph"><h3>إضافة صديق</h3></div>
+  <textarea class="fld" id="fcode" placeholder="الزق الكود أو رسالة الدعوة هنا"></textarea>
+  <div class="fr"><button class="pill pr" style="--c:var(--social)" data-a="addf">${ic('plus')}إضافة أو تحديث</button></div></div>`;
+}
 /* ---------- render + motion ---------- */
 const prev={};
 function motion(){
@@ -447,17 +548,8 @@ document.addEventListener('click',e=>{
   const fb=()=>{const m=document.getElementById('mycode');m.select();try{document.execCommand('copy');ok()}catch(x){toast('انسخ الكود يدويًا')}};
   navigator.clipboard?navigator.clipboard.writeText(t).then(ok).catch(fb):fb();return;
  }
- else if(a==='addf'){
-  const v=document.getElementById('fcode').value;
-  try{const o=dec(v);
-   if(o.i===S.me.id){toast('ده كودك أنت');return}
-   const f={id:o.i,n:String(o.n).slice(0,20),t:o.t,h:o.h.slice(-30).map(Number),s:+o.s||0,b:+o.b||0};
-   const ix=S.friends.findIndex(x=>x.id===f.id),upd=ix>=0;
-   if(upd)S.friends[ix]=f;else S.friends.push(f);
-   save();render();toast(upd?'تم تحديث '+f.n:'تمت إضافة '+f.n);
-  }catch(x){toast('الكود ده مش صالح')}
-  return;
- }
+ else if(a==='addf'){addF(document.getElementById('fcode').value);return}
+ else if(X[a]){if(X[a](b)===1)return}
  else if(a==='export'){
   const u=URL.createObjectURL(new Blob([JSON.stringify(S)],{type:'application/json'}));
   const l=document.createElement('a');l.href=u;l.download='yawmi-backup-'+todayKey+'.json';l.click();URL.revokeObjectURL(u);return;
@@ -485,6 +577,7 @@ document.getElementById('imp').addEventListener('change',e=>{
  r.onload=()=>{try{const o=JSON.parse(r.result);if(!o.tasks||!o.days)throw 0;S=o;fix();applyTheme();save();render();toast('تم استيراد النسخة')}catch(x){toast('الملف ده مش نسخة صالحة')}};
  r.readAsText(f);e.target.value='';
 });
+if(location.hash.includes('YW1.')){tab='friends';addF(decodeURIComponent(location.hash.slice(1)));history.replaceState(null,'',location.pathname+location.search)}
 render();
 </script>
 </body>
