@@ -428,7 +428,7 @@ function foodX(c,D){
  <div class="panel glass" data-f="f-s" style="--c:${c.c}"><div class="ph"><h3>الخطوات</h3><span class="pc">${num(st)} / ${num(P.sg)}</span></div>
  <div class="bar"><i style="width:${Math.min(st/P.sg*100,100)}%"></i></div>
  <div class="stats"><span class="chip">${ar(km.toFixed(1))} كم</span><span class="chip">${ic('flame','fl')}${num(burn)} سعرة محروقة</span><span class="chip">${ic('clock')}${num(Math.round(st/110))} دقيقة مشي</span></div>
- <div class="fr"><button class="pill ${sOn?'pr':''}" style="--c:${c.c}" data-a="auto">📱 ${sOn?'العدّاد شغال':'شغّل العدّاد التلقائي'}</button></div>${S.auto?'<p class="hint">بيعدّ والتطبيق مفتوح والشاشة منوّرة.</p>':''}
+ <div class="fr"><button class="pill ${sOn?'pr':''}" style="--c:${c.c}" data-a="auto">📱 ${sOn?'العدّاد شغال':'شغّل العدّاد التلقائي'}</button></div>${sOn?'<p class="hint">الحساس شغّال ✓ مشّي والشاشة منوّرة. الخطوات بتظهر بعد أول ٣ خطوات.</p>':S.auto?'<p class="hint">العدّاد واقف. اضغط الزرار تاني (الآيفون بيطلب الإذن كل مرة تفتح التطبيق).</p>':''}
  <div class="fr"><button class="pill" data-a="stp" data-v="-500">−٥٠٠</button><button class="pill pr" style="--c:${c.c}" data-a="stp" data-v="500">+٥٠٠</button><button class="pill pr" style="--c:${c.c}" data-a="stp" data-v="1000">+١٠٠٠</button><button class="pill pr" style="--c:${c.c}" data-a="stp" data-v="2500">+٢٥٠٠</button></div>
  <details style="margin-top:8px"><summary class="hint" style="cursor:pointer">تعديل يدوي وإعدادات</summary><div class="fr"><label>خطوات اليوم<input class="fld" inputmode="numeric" data-q="st" value="${st||''}"></label><label>طولك (سم)<input class="fld" inputmode="numeric" data-q="h" value="${P.h}"></label></div>
  <div class="fr"><label>هدف الخطوات<input class="fld" inputmode="numeric" data-q="sg" value="${P.sg}"></label><label>هدف السعرات<input class="fld" inputmode="numeric" data-q="kg" value="${P.k}"></label></div></details>
@@ -507,12 +507,13 @@ X.addc=()=>{(async()=>{const c=en(document.getElementById('fcode6').value).repla
 X.sync=()=>{sync(false);return 1};
 X.cpc=()=>{navigator.clipboard&&navigator.clipboard.writeText(S.me.code||'');toast('تم نسخ الكود');return 1};
 X.share6=()=>{const t='ضيفني على يومي 🔥 كودي: '+ar(S.me.code);navigator.share?navigator.share({text:t}).catch(()=>{}):window.open(wa(t),'_blank');return 1};
-let sOn=0,lp=9.8,lt=0,cand=0,wl=null,rT=0;
-function mot(e){const a=e.accelerationIncludingGravity;if(!a)return;const m=Math.hypot(a.x||0,a.y||0,a.z||0);lp+=(m-lp)*.08;const d=m-lp,t=Date.now();
- if(d>1.4&&t-lt>280){cand=t-lt<1000?cand+1:1;lt=t;if(cand>=4){const D=day(todayKey);D.st=(D.st||0)+(cand===4?4:1);
-  if(!rT)rT=setTimeout(()=>{rT=0;save();if(!document.activeElement.matches('input,textarea')&&(tab==='home'||tab==='food')){const y=scrollY;render();scrollTo(0,y)}},3000)}}}
+let sOn=0,lp=9.8,lt=0,cand=0,wl=null,rT=0,ev=0,arm=1;
+function mot(e){const a=e.accelerationIncludingGravity;if(!a||a.x==null)return;const m=Math.hypot(a.x||0,a.y||0,a.z||0);if(!ev)lp=m;ev++;lp+=(m-lp)*.02;const d=m-lp,t=Date.now();
+ if(d<.35)arm=1;
+ if(arm&&d>1&&t-lt>250){arm=0;cand=t-lt<1200?cand+1:1;lt=t;if(cand>=3){const D=day(todayKey);D.st=(D.st||0)+(cand===3?3:1);
+  if(!rT)rT=setTimeout(()=>{rT=0;save();if(!document.activeElement.matches('input,textarea')&&(tab==='home'||tab==='food')){const y=scrollY;render();scrollTo(0,y)}},1200)}}}
 async function autoOn(ask){try{if(typeof DeviceMotionEvent==='undefined')return false;if(DeviceMotionEvent.requestPermission){if(!ask)return false;if(await DeviceMotionEvent.requestPermission()!=='granted'){toast('الإذن مرفوض');return false}}
- addEventListener('devicemotion',mot);sOn=1;try{wl=await navigator.wakeLock.request('screen')}catch(e){}return true}catch(e){return false}}
+ addEventListener('devicemotion',mot);sOn=1;ev=0;setTimeout(()=>{if(sOn&&!ev)toast('الحساس مش بيبعت قراءات. اقفل التطبيق وافتحه تاني واختار السماح')},2500);try{wl=await navigator.wakeLock.request('screen')}catch(e){}return true}catch(e){return false}}
 function autoOff(){removeEventListener('devicemotion',mot);sOn=0;try{wl&&wl.release()}catch(e){}}
 X.auto=()=>{(async()=>{if(sOn){autoOff();S.auto=0;toast('اتوقف العدّاد')}else if(await autoOn(true)){S.auto=1;toast('العدّاد شغال. سيب التطبيق مفتوح')}save();render()})();return 1};
 document.addEventListener('visibilitychange',async()=>{if(document.hidden)return;if(sOn){try{wl=await navigator.wakeLock.request('screen')}catch(e){}}sync(true)});
